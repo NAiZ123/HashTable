@@ -6,22 +6,95 @@
 
 #define SIZE 20
 
-/* DataItemの定義 */
-struct DataItem
+/* リンクされたリストに項目を格納するためのノードの定義 */
+struct node
 {
-    int data;
     int key;
+    int data;
+    struct node* next;
+};
+/* ハッシュテーブルの各インデックスにリンクされたリストを格納する場合 */
+struct arrayitem
+{
+    struct node* head;  //リンクされたリストの先頭要素をハッシュテーブルのインデックスに指す
+    struct node* tail;  //ハッシュテーブルのインデックスにリンクされたリストの最後の要素を指す
 };
 
-struct DataItem* hashArray[SIZE];
-struct DataItem* dummyItem;
-struct DataItem* item;
+struct arrayitem *HashArray;
+int size = 0;   //ハッシュテーブル要素数
+int max = SIZE; //ハッシュテーブル最大要素数
+
+//struct node *item; //検索用
 
 /* ハッシュ関数の定義 */
 int hashCode(int key)
 {
     return key % SIZE;
 }
+
+struct node* get_element(struct node* list, int find_index);
+void remove_element(int key);
+void rehash();
+void init_array();
+
+/* 挿入のための関数 chaining */
+void insert(int key, int data)
+{
+    float n = 0.0; //リハッシュの有無
+
+    /*ハッシュテーブルに挿入する項目の作成*/
+    struct node* item = (struct node*)malloc(sizeof(struct node));
+    item->key = key;
+    item->data = data;
+    item->next = NULL;
+
+    int HashIndex = hashcode(key);
+
+    /* 指定されたインデックスからリンクされたリストを抽出する */
+    struct node* list = (struct node*)HashArray[HashIndex].head;
+
+    if (list == NULL)
+    {
+        /* ハッシュテーブルの指定インデックスにリンクされたリストが存在しない場合 */
+        HashArray[HashIndex].head = item;
+        HashArray[HashIndex].tail = item;
+        size++;
+    }
+    else {
+        /* ハッシュテーブルの指定インデックスにリンクされたリストが存在する場合　*/
+        int find_index = find(list, key);
+        if (find_index == -1) {
+            // 既存のリンク先リストにkeyがない場合、リンク先リストの最後にキーを追加する
+            HashArray[HashIndex].tail->next = item;
+            HashArray[HashIndex].tail = item;
+            size++;
+        }
+        else {
+            // リンク先のリストに既にキーが存在する場合、既存のキーの値を更新する
+            struct node* element = get_element(list, find_index);
+            element->data = data;
+        }
+
+    }
+    
+}
+
+/* 指定されたfind_indexにあるノード（リンクされたリスト項目）を返す　*/
+struct node* get_element(struct node* list, int find_index)
+{
+    int i = 0;
+    struct node* temp = list;
+    while (i != find_index)
+    {
+        temp = temp->next;
+        i++;
+    }
+    return temp;
+}
+
+
+
+
 
 /* 検索のための関数 */
 /* liner Probingを使っているのでそれに合わせた検索を実装です。 */
@@ -47,29 +120,8 @@ struct DataItem* search(int key)
     return NULL;
 }
 
-/* 挿入のための関数 */
-void insert(int key, int data)
-{
 
-    struct DataItem* item = (struct DataItem*)malloc(sizeof(struct DataItem));
-    item->data = data;
-    item->key = key;
 
-    //get the hash
-    int hashIndex = hashCode(key);
-
-    //move in array until an empty or deleted cell
-    while (hashArray[hashIndex] != NULL && hashArray[hashIndex]->key != -1)
-    {
-        //go to next cell
-        ++hashIndex;
-
-        //wrap around the table
-        hashIndex %= SIZE;
-    }
-    // ポインタに対してオブジェクトを代入するということをやっています。
-    hashArray[hashIndex] = item;
-}
 
 struct DataItem* delete (struct DataItem* item)
 {
@@ -147,7 +199,7 @@ int main()
     }
 
     delete (item);
-    item = search(37);
+    item = search(13);
 
     if (item != NULL)
     {
