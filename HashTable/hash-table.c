@@ -25,6 +25,7 @@ int size = 0;   //ハッシュテーブル要素数
 int max = SIZE; //ハッシュテーブル最大要素数
 
 //struct node *item; //検索用
+struct node* item;
 
 /* ハッシュ関数の定義 */
 int HashCode(int key)
@@ -42,16 +43,16 @@ void insert(int key, int data)
 {
 	float n = 0.0; //リハッシュの有無
 
-	/*ハッシュテーブルに挿入する項目の作成*/
-	struct node* item = (struct node*)malloc(sizeof(struct node));
-	item->key = key;
-	item->data = data;
-	item->next = NULL;
-
 	int HashIndex = HashCode(key);
 
 	/* 指定されたインデックスからリンクされたリストを抽出する */
 	struct node* list = (struct node*)HashArray[HashIndex].head;
+
+	/*ハッシュテーブルに挿入する項目の作成*/
+	struct node* item = (struct node*)malloc(sizeof(struct node) * max);
+	item->key = key;
+	item->data = data;
+	item->next = NULL;
 
 	if (list == NULL)
 	{
@@ -77,12 +78,12 @@ void insert(int key, int data)
 
 	}
 	n = (1.0 * size) / max;
-	if (n >= 0.75) {
+	if (n >= 0.85) {
 		//rehashing
 		printf("going to rehashing\n");
 		rehash();
 	}
-
+	free(item);
 }
 
 
@@ -131,6 +132,7 @@ void rehash()
 		}
 	}
 	temp = NULL;
+	free(HashArray);
 }
 
 
@@ -205,20 +207,14 @@ void remove_element(int key)
 			{
 				temp->next = NULL;
 				HashArray[index].tail = temp;
-
 			}
 			else
 			{
 				temp->next = temp->next->next;
-
 			}
-
 			printf("This key has been removed\n");
-
 		}
-
 	}
-
 }
 
 /* 検索のための関数 */
@@ -258,7 +254,7 @@ void display()
 		struct node* temp = HashArray[i].head;
 		if (temp == NULL)
 		{
-			printf("array[%d] has no elements\n", i);
+			printf("array[%d] -- \n", i);
 
 		}
 		else
@@ -291,7 +287,7 @@ int main()
 {
 	int choice, key, data, c = 0;
 
-	HashArray = (struct arrayitem*)malloc(max * sizeof(struct arrayitem*));
+	HashArray = (struct arrayitem*)malloc(sizeof(struct arrayitem*) * max);
 	init_array();
 
 	insert(1, 20);
@@ -351,6 +347,7 @@ int main()
 
 	}
 
+	free(HashArray);
 	getch();
 
 }
